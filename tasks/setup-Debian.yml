@@ -1,0 +1,28 @@
+---
+- name: Ensure dependencies are present.
+  ansible.builtin.apt:
+    name:
+      - curl
+    state: present
+
+- name: Download NodeSource Installation File.
+  ansible.builtin.get_url:
+    url: "https://deb.nodesource.com/setup_{{ nodejs_version }}"
+    dest: "/tmp/nodesource_setup.sh"
+    mode: "u=rw,g=r,o=r"
+  tags: ["skip_ansible_lint"]
+
+- name: Run NodeSource Installation File.
+  ansible.builtin.shell: "/bin/bash /tmp/nodesource_setup.sh"
+  tags: ["skip_ansible_lint"]
+
+- name: Update apt cache if repo was added.
+  ansible.builtin.apt: update_cache=yes
+  when: node_repo is changed
+  tags: ["skip_ansible_lint"]
+
+- name: Ensure Node.js and npm are installed.
+  ansible.builtin.apt:
+    name: "nodejs={{ nodejs_version | regex_replace('x', '') }}*"
+    state: present
+    allow_downgrades: true
